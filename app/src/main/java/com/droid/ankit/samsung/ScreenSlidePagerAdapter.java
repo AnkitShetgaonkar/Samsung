@@ -12,7 +12,7 @@ import java.util.List;
 public class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
 
     private List<PagerFragment> mUserFragments;
-    private CharSequence[] tabTitles = {"Now Showing","Up Coming"};
+    private CharSequence[] tabTitles = {"Now Showing","Upcoming"};
 
     public ScreenSlidePagerAdapter(List<PagerFragment> userFragments, FragmentManager fm) {
         super(fm);

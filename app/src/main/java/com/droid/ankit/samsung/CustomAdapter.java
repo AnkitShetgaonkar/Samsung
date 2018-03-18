@@ -5,7 +5,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.droid.ankit.samsung.data.MovieData;
 
 import java.util.ArrayList;
 
@@ -34,6 +40,9 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.getMovieNameTv().setText(mMovieData.get(position).getMovieName());
         holder.getPromotionTv().setText(mMovieData.get(position).getPopularityName());
+        holder.getGenreTv().setText(mMovieData.get(position).getGenre());
+        Glide.with(holder.getImageView().getContext()).load(mMovieData.get(position).getImageUrl()).
+                apply(RequestOptions.circleCropTransform()).into(holder.getImageView());
     }
 
     @Override
@@ -45,11 +54,15 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
     public class ViewHolder extends RecyclerView.ViewHolder {
         private TextView movieNameTv;
         private TextView promotionTv;
+        private ImageView imageView;
+        private TextView genreTv;
 
         public ViewHolder(View itemView) {
             super(itemView);
             movieNameTv = itemView.findViewById(R.id.tv_1);
             promotionTv = itemView.findViewById(R.id.tv_2);
+            imageView = itemView.findViewById(R.id.tv_image);
+            genreTv = itemView.findViewById(R.id.tv_genre);
         }
 
         public TextView getMovieNameTv() {
@@ -60,5 +73,12 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
             return promotionTv;
         }
 
+        public ImageView getImageView() {
+            return imageView;
+        }
+
+        public TextView getGenreTv() {
+            return genreTv;
+        }
     }
 }

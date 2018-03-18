@@ -1,4 +1,4 @@
-package com.droid.ankit.samsung;
+package com.droid.ankit.samsung.data;
 
 import java.io.Serializable;
 import java.util.List;
@@ -14,10 +14,11 @@ public class MovieData implements Serializable{
     private String imageUrl;
 
 
-    public MovieData(String movieName, String popularityName,String imageUrl) {
+    public MovieData(String movieName, String popularityName,String imageUrl,String genre) {
         this.movieName = movieName;
         this.popularityName = popularityName;
         this.imageUrl = imageUrl;
+        this.genre = genre;
     }
 
     public String getMovieName() {
@@ -38,5 +39,9 @@ public class MovieData implements Serializable{
 
     public String getImageUrl() {
         return imageUrl;
+    }
+
+    public String getGenre() {
+        return genre;
     }
 }

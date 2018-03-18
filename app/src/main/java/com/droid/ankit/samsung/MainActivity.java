@@ -2,26 +2,39 @@ package com.droid.ankit.samsung;
 
 import android.os.AsyncTask;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
+
+import com.droid.ankit.samsung.data.MovieData;
+import com.droid.ankit.samsung.data.MovieList;
+import com.droid.ankit.samsung.genre_utils.GenresUtils;
+import com.droid.ankit.samsung.network.Network;
+import com.droid.ankit.samsung.network.ResponsePojo;
+import com.droid.ankit.samsung.network.Result;
+import com.droid.ankit.samsung.presenter.MainPresenter;
+import com.droid.ankit.samsung.views.MainView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity implements MainView, PagerFragment.Callback {
 
     private ViewPager mPager;
     private PagerAdapter mPagerAdapter;
     private List<PagerFragment> mPagerFragments;
-    private ResponsePojo mResponsePojoNowMovies;
-    private ResponsePojo mResponsePojoUpComingMovies;
-    private MovieList mNowPlayingMovieList;
+    private MainPresenter mPresenter;
+    private ProgressBar mProgressBar;
+    private View mMovieGroup;
+    private MovieList mShowingMovieList;
     private MovieList mUpcomingMovieList;
-    private Object upcoming;
+    private PagerFragment mNowShowingFragment;
+    private PagerFragment mUpcomingFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,74 +44,84 @@ public class MainActivity extends AppCompatActivity {
         mPagerFragments = new ArrayList<>();
         TabLayout tabLayout = findViewById(R.id.sliding_tabs);
         tabLayout.setupWithViewPager(mPager);
-        new NowPlayingNetworkCall().execute();
-        new UpComingNetworkCall().execute();
-    }
+        mProgressBar = findViewById(R.id.progressBar);
+        mMovieGroup = findViewById(R.id.movieGroup);
+        mPresenter = new MainPresenter(this);
 
-    private void setNowPlaying() {
-        ArrayList<MovieData> movieList = new ArrayList<>();
-        for (Result result :
-                mResponsePojoNowMovies.getResults()) {
-            MovieData movieData = new MovieData(result.getTitle(),""+result.getPopularity());
-            movieList.add(movieData);
-        }
-        mNowPlayingMovieList = new MovieList(movieList);
-        mPagerFragments.add(PagerFragment.newInstance(mNowPlayingMovieList));
-
-    }
-
-    public void setUpcoming() {
-        ArrayList<MovieData> movieList = new ArrayList<>();
-        for (Result result :
-                mResponsePojoUpComingMovies.getResults()) {
-            MovieData movieData = new MovieData(result.getTitle(),""+result.getPopularity());
-            movieList.add(movieData);
-        }
-        mUpcomingMovieList = new MovieList(movieList);
-        mPagerFragments.add(PagerFragment.newInstance(mUpcomingMovieList));
+        mShowingMovieList = new MovieList(new ArrayList<MovieData>());
+        mUpcomingMovieList = new MovieList(new ArrayList<MovieData>());
+        mNowShowingFragment = PagerFragment.newInstance(mShowingMovieList,PagerFragment.PAGER_NOW_SHOWING);
+        mUpcomingFragment = PagerFragment.newInstance(mUpcomingMovieList,PagerFragment.PAGER_UPCOMING);
+        mPagerFragments.add(mNowShowingFragment);
+        mPagerFragments.add(mUpcomingFragment);
         mPagerAdapter = new ScreenSlidePagerAdapter(mPagerFragments, getSupportFragmentManager());
         mPager.setAdapter(mPagerAdapter);
+        mPresenter.init();
     }
 
-    private class NowPlayingNetworkCall extends AsyncTask<Void, Void, Void> {
 
-        @Override
-        protected Void doInBackground(Void... params) {
-            // this might take a while ...
-            Network network = new Network();
-            mResponsePojoNowMovies = network.getNowPlaying();
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void param) {
-
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    setNowPlaying();
-                }
-            });
-
-        }
+    @Override
+    public void showLoader() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mProgressBar.setVisibility(View.VISIBLE);
+                mMovieGroup.setVisibility(View.GONE);
+            }
+        });
     }
 
-    private class UpComingNetworkCall extends AsyncTask<Void, Void, Void> {
+    @Override
+    public void dismissLoader() {
+        //dismiss loader
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mProgressBar.setVisibility(View.GONE);
+                mMovieGroup.setVisibility(View.VISIBLE);
+            }
+        });
+    }
 
-        @Override
-        protected Void doInBackground(Void... params) {
-            // this might take a while ...
-            Network network = new Network();
-            mResponsePojoUpComingMovies = network.getUpcoming();
-            return null;
-        }
+    @Override
+    public void showMovies(MovieList showingMovieList, MovieList upcomingMovieList) {
+        mShowingMovieList.getMovieList().addAll(showingMovieList.getMovieList());
+        mUpcomingMovieList.getMovieList().addAll(upcomingMovieList.getMovieList());
+    }
 
-        @Override
-        protected void onPostExecute(Void param) {
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    setUpcoming();
-                }
-            });
+    @Override
+    public void error(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void showUpcomingMovies(MovieList movieList) {
+        mUpcomingMovieList.getMovieList().addAll(movieList.getMovieList());
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mUpcomingFragment.notifyDataChange();
+            }
+        });
+    }
+
+    @Override
+    public void showNowShowingMovies(MovieList movieList) {
+        mShowingMovieList.getMovieList().addAll(movieList.getMovieList());
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mNowShowingFragment.notifyDataChange();
+            }
+        });
+    }
+
+    @Override
+    public void loadMore(String pagerType) {
+        if(pagerType.equals(PagerFragment.PAGER_NOW_SHOWING)){
+            mPresenter.getNowShowing();
+        }else{
+            mPresenter.getUpcoming();
         }
     }
 }
